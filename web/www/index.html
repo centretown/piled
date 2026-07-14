@@ -1,0 +1,183 @@
+<!doctype html>
+<html>
+    <head>
+        <title>lights</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+            rel="stylesheet"
+            href="https://www.w3schools.com/w3css/5/w3.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Montserrat"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+        />
+        <style>
+            body,
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                font-family: "Montserrat", sans-serif;
+            }
+            .grid {
+                gap: 8px;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            .button-container {
+                width: 100%;
+                display: grid;
+                grid-template-columns: auto auto;
+                gap: 4px;
+            }
+            .form-button {
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+            }
+            .edit-view {
+                display: grid;
+                grid-template-columns: auto 4rem;
+            }
+            .edit-button {
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+            }
+            .w3-row-padding img {
+                margin-bottom: 12px;
+            }
+            /* Set the width of the sidebar to 120px */
+            .w3-sidebar {
+                width: 120px;
+                background: #222;
+            }
+            /* Add a left margin to the "page content" that matches the width of the sidebar (120px) */
+            #main {
+                margin-left: 4rem;
+                margin-right: 4rem;
+            }
+            /* Remove margins from "page content" on small screens */
+            @media only screen and (max-width: 600px) {
+                #main {
+                    margin-left: 0.5rem;
+                    margin-right: 0.5rem;
+                }
+            }
+        </style>
+        <script
+            src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
+            integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/htmx-ext-ws@2.0.4"
+            integrity="sha384-1RwI/nvUSrMRuNj7hX1+27J8XDdCoSLf0EjEyF69nacuWyiJYoQ/j39RT1mSnd2G"
+            crossorigin="anonymous"
+        ></script>
+        <script>
+            window.onload = dynamic;
+            var is_dynamic_loaded = false;
+            function dynamic() {
+                if (!is_dynamic_loaded) {
+                    htmx.ajax("GET", "/load", "#dynamic").then(() => {
+                        is_dynamic_loaded = true;
+                        console.log("Content inserted successfully!");
+
+                        let wsstat = document.getElementById("ws-status");
+                        let wsmenu = document.getElementById("ws-status-menu");
+
+                        // htmx:wsConnecting
+                        // htmx:wsError
+
+                        let socket;
+                        let elt;
+
+                        let status_connected = "w3-text-green";
+                        let status_disconnected = "w3-text-yellow";
+                        let status_error = "w3-text-red";
+                        let current_status = status_disconnected;
+
+                        function updateSocketStatus(newStatus, message) {
+                            htmx.removeClass(wsstat, current_status);
+                            current_status = newStatus;
+                            htmx.addClass(wsstat, current_status);
+                            wsmenu.innerText = message;
+                            console.log(message);
+                        }
+
+                        document.addEventListener(
+                            "visibilitychange",
+                            function (evt) {
+                                console.log(
+                                    "visibilitychange",
+                                    document.visibilityState,
+                                );
+                                if (socket) {
+                                    socket.send(document.visibilityState, elt);
+                                }
+                            },
+                        );
+
+                        document.body.addEventListener(
+                            "htmx:wsOpen",
+                            function (evt) {
+                                socket = evt.detail.socketWrapper;
+                                elt = evt.detail.elt;
+                                updateSocketStatus(
+                                    status_connected,
+                                    "connected",
+                                );
+                            },
+                        );
+
+                        document.body.addEventListener(
+                            "htmx:wsError",
+                            function (evt) {
+                                updateSocketStatus(status_error, "error");
+                            },
+                        );
+                        document.body.addEventListener(
+                            "htmx:wsClose",
+                            function (evt) {
+                                updateSocketStatus(
+                                    status_disconnected,
+                                    "disconnected",
+                                );
+                            },
+                        );
+                   });
+                }
+            }
+        </script>
+    </head>
+
+    <body class="w3-black">
+        <!-- Page Content -->
+        <div id="main" class="w3-padding-16">
+            <!-- Sensors Section -->
+            <div id="sensors_heading" class="w3-padding-16 w3-content">
+                <h3 class="w3-text-light-grey">
+                    <i
+                        id="ws-status"
+                        class="fa fa-bolt w3-xlarge w3-text-yellow"
+                    ></i>
+                    Lights
+                </h3>
+                <hr style="width: 200px" class="w3-opacity" />
+
+                <!-- Grid for sensors -->
+                <div id="dynamic" hx-swap="innerHTML"></div>
+                <div id="users" class="users" style="display: none"></div>
+            </div>
+        </div>
+        <!-- End Sensors Section -->
+
+        <!--<script defer></script>-->
+    </body>
+</html>

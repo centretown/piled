@@ -1,0 +1,247 @@
+{{define "dynamic"}} {{template "script". }}
+<div id="event" hx-ext="ws" ws-connect="/events">
+    <span id="ws-status-menu"></span>
+    {{range $folder := .Folders}}
+    <!--  -->
+    {{ template "folder" $folder }}
+    <!--  -->
+    {{end}}
+    <!--  -->
+</div>
+{{end}}
+<!--  -->
+
+{{define "folder"}}
+<div
+    class="w3-padding w3-dark-grey w3-margin-top w3-round"
+    hx-on:click="toggle_fold('{{.ID}}','{{.ID}}-icon')"
+>
+    <i
+        id="{{.ID}}-icon"
+        class="w3-text-dark-gray w3-large w3-margin-right fa fa-chevron-{{if .Open}}down{{else}}right{{end}}"
+    ></i>
+    {{.Title}}
+</div>
+{{range $index, $grid := .Grids}}
+<div id="{{.ID}}">{{template "grid" $grid}}</div>
+{{end}} {{end}}
+<!--  -->
+
+{{define "grid"}}
+<div id="{{.ID}}" class="w3-grid w3-margin grid">
+    {{range $card := .Cards}}
+    <!--  -->
+    {{template "card" $card }}
+    <!--  -->
+    {{end}}
+    <!--  -->
+</div>
+{{end}}
+<!--  -->
+
+{{define "card"}}
+<!-- -->
+{{if .Edit}}
+<!-- -->
+{{template "card_edit" .}}
+<!-- -->
+{{else}}
+<div id="{{.ID}}-card" class="w3-card w3-padding w3-asphalt w3-round-large">
+    {{.Title}}
+    <span>{{template "value" .}}</span>
+</div>
+{{end}}
+<!--  -->
+{{end}}
+<!--  -->
+
+{{define "card_edit"}}
+<div
+    id="{{.ID}}-card"
+    class="w3-card w3-padding w3-asphalt w3-hover-dark-grey w3-border w3-border-blue-gray w3-round-large"
+>
+    {{.Title}}
+    <span id="{{.ID}}-view" class="edit-view">
+        <div>{{template "value-edit" .}}</div>
+        <button
+            id="{{.ID}}-button"
+            class="fa fa-pencil w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+            type="button"
+            hx-on:click="swap_hide('{{.ID}}-view','{{.ID}}-form')"
+        ></button>
+    </span>
+    <span id="{{.ID}}-form" class="w3-hide"> {{template "form" .}} </span>
+</div>
+{{end}}
+<!--  -->
+
+{{define "form"}}
+<form>
+    <input
+        id="{{.ID}}-input"
+        class="w3-text-black w3-center"
+        type="number"
+        name="{{.ID}}-name"
+        value="{{.Value}}"
+        style="width: 7rem"
+        {{if gt .Bounds.Step 0}}
+        min="{{.Bounds.Min}}"
+        max="{{.Bounds.Max}}"
+        step="{{.Bounds.Step}}"
+        {{end}}
+    />
+    {{template "form_buttons" .}}
+</form>
+{{end}}
+<!--  -->
+
+{{define "form_buttons"}}
+<div class="button-container">
+    {{template "button_reset" .}} {{template "button_submit" .}}
+</div>
+<!--  -->
+{{end}}
+<!--  -->
+
+{{define "button_reset"}}
+<button
+    class="fa fa-undo w3-large w3-asphalt w3-text-blue-grey w3-round form-button"
+    type="reset"
+></button>
+{{end}}
+<!--  -->
+
+{{define "button_submit"}}
+<button
+    class="fa fa-check w3-large w3-asphalt w3-text-teal w3-round form-button"
+    type="button"
+    hx-on:click="submit_value('{{.ID}}');"
+></button>
+{{end}}
+<!--  -->
+
+{{define "value"}}
+<div class="w3-text-amber">
+    <span id="{{.ID}}">{{.Value}}</span>
+</div>
+{{end}}
+<!--  -->
+
+{{define "value-edit"}}
+<div class="w3-text-amber">
+    <script>
+        set_parm_inner("{{.ID}}", "{{.ID}}");
+    </script>
+    <span id="{{.ID}}">{{.Value}}</span>
+</div>
+{{end}}
+<!--  -->
+
+{{define "script"}}
+<script>
+    const w3_hide = "w3-hide";
+    const fa_down = "fa-chevron-down";
+    const fa_right = "fa-chevron-right";
+    const parms = new Map();
+
+    {{range $folder:= .Folders}}
+      {{range $grid:=$folder.Grids}}
+        {{range $card:=$grid.Cards}}
+          {{if $card.Edit}}
+          parms.set('{{$card.ID}}','{{$card.Value}}')
+          {{end}}
+        {{end}}
+      {{end}}
+    {{end}}
+
+    for (let [key, value] of parms) {
+      console.log(key + " is " + value);
+    }
+
+    function submit_value(id) {
+      set_parm_input(id, id+'-input');
+      set_parm_inner(id, id);
+      swap_hide(id+'-view',id+'-form');
+    }
+
+    function set_parm_input(key, id) {
+      if (!key || !id) {
+        console.log("set_parm_input invalid arguments", key, id);
+        return;
+      }
+      let elt = document.getElementById(id);
+      if (!elt) {
+        console.log("set_parm_input element not found", id);
+      }
+      parms.set(key, elt.value);
+    }
+
+    function set_parm_inner(key, id) {
+      if (!key || !id) {
+        console.log("set_parm_inner invalid arguments", key, id);
+        return;
+      }
+      let elt = document.getElementById(id);
+      if (!elt) {
+          console.log("set_parm_inner element not found", id);
+          return;
+      }
+      let value = parms.get(key);
+      elt.innerHTML = value;
+    }
+
+    function set_parm_elem(key, id) {
+      if (!key || !id) {
+        console.log("set_parm_elem invalid arguments", key, id);
+        return;
+      }
+      let elt = document.getElementById(id);
+      if (!elt) {
+        return;
+      }
+      elt.value = parms.get(key);
+    }
+
+    function toggle_fold(id, icon_id) {
+        let elt = document.getElementById(id);
+        if (elt && icon_id) {
+            if (elt.className.indexOf(w3_hide) == -1) {
+                htmx.addClass(elt, w3_hide);
+                swap_class(icon_id, fa_down, fa_right);
+            } else {
+                htmx.removeClass(elt, w3_hide);
+                swap_class(icon_id, fa_right, fa_down);
+            }
+        }
+    }
+    function swap_hide(id, id2) {
+        let elt = htmx.find("#" + id);
+        let elt2 = htmx.find("#" + id2);
+        if (elt && elt2) {
+            if (elt.className.indexOf(w3_hide) == -1) {
+                htmx.addClass(elt, w3_hide);
+                htmx.removeClass(elt2, w3_hide);
+            } else {
+                htmx.addClass(elt2, w3_hide);
+                htmx.removeClass(elt, w3_hide);
+            }
+        } else {
+            if (!elt) {
+                console.log(id, " not found");
+            }
+            if (!elt2) {
+                console.log(id2, " not found");
+            }
+        }
+    }
+
+    function swap_class(id, cls, cls2) {
+        let elt = htmx.find("#" + id);
+        if (elt && cls && cls2) {
+            htmx.removeClass(elt, cls);
+            htmx.addClass(elt, cls2);
+        }
+    }
+</script>
+{{end}}
+<!--  -->
