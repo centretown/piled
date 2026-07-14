@@ -90,6 +90,7 @@
         step="{{.Bounds.Step}}"
         {{end}}
     />
+    <script>set_parm_elem('{{.ID}}','{{.ID}}-input');</script>
     {{template "form_buttons" .}}
 </form>
 {{end}}
@@ -142,21 +143,22 @@
     const w3_hide = "w3-hide";
     const fa_down = "fa-chevron-down";
     const fa_right = "fa-chevron-right";
-    const parms = new Map();
-
+    // const parms = new Map();
+    let value;
     {{range $folder:= .Folders}}
       {{range $grid:=$folder.Grids}}
         {{range $card:=$grid.Cards}}
           {{if $card.Edit}}
-          parms.set('{{$card.ID}}','{{$card.Value}}')
+            value = localStorage.getItem('{{$card.ID}}');
+            if (!value) {
+              localStorage.setItem('{{$card.ID}}','{{$card.Value}}');
+              value = '{{$card.Value}}';
+            }
+            console.log('{{$card.ID}}' + " is " + value);
           {{end}}
         {{end}}
       {{end}}
     {{end}}
-
-    for (let [key, value] of parms) {
-      console.log(key + " is " + value);
-    }
 
     function submit_value(id) {
       set_parm_input(id, id+'-input');
@@ -173,7 +175,7 @@
       if (!elt) {
         console.log("set_parm_input element not found", id);
       }
-      parms.set(key, elt.value);
+      localStorage.setItem(key, elt.value);
     }
 
     function set_parm_inner(key, id) {
@@ -186,7 +188,7 @@
           console.log("set_parm_inner element not found", id);
           return;
       }
-      let value = parms.get(key);
+      let value = localStorage.getItem(key);
       elt.innerHTML = value;
     }
 
@@ -199,7 +201,7 @@
       if (!elt) {
         return;
       }
-      elt.value = parms.get(key);
+      elt.value = localStorage.getItem(key);
     }
 
     function toggle_fold(id, icon_id) {

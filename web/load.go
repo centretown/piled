@@ -62,7 +62,6 @@ func loadDynamic(opt *ws2811.Option, templ *template.Template) func(w http.Respo
 
 		w.Header().Add("Cache-Control", "no-cache")
 		err := templ.Lookup("dynamic").Execute(w, &data)
-		// templ.Lookup("dynamic").Execute(os.Stdout, &data)
 		if err != nil {
 			log.Println("error is here")
 			log.Fatalln(err)
@@ -84,7 +83,7 @@ func buildOptions(opt *ws2811.Option) FolderData {
 				Value: strconv.Itoa(opt.DmaNum),
 			},
 			CardData{
-				ID:    "render-weit",
+				ID:    "render-wait",
 				Title: "Render Wait Time",
 				Value: strconv.Itoa(opt.RenderWaitTime),
 			},
@@ -102,65 +101,65 @@ func buildOptions(opt *ws2811.Option) FolderData {
 
 func buildChannels(opt *ws2811.Option) []FolderData {
 	folders := make([]FolderData, 0)
-	for i, ch := range opt.Channels {
-		index := strconv.Itoa(i)
+	grids := make([]GridData, 0)
+	for chanNum, ch := range opt.Channels {
+		chanIndex := strconv.Itoa(chanNum)
 		cards := make([]CardData, 0)
-		grids := make([]GridData, 0)
 		cards = append(cards, CardData{
-			ID:    "gpio" + index,
+			ID:    "gpio" + chanIndex,
 			Title: "GPIO Pin",
 			Value: strconv.Itoa(ch.GpioPin),
 		})
 		cards = append(cards, CardData{
-			ID:    "invert" + index,
+			ID:    "invert" + chanIndex,
 			Title: "Invert",
 			Value: strconv.FormatBool(ch.Invert),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-count" + index,
+			ID:    "led-count" + chanIndex,
 			Title: "Led Count",
 			Value: strconv.Itoa(ch.LedCount),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-type" + index,
+			ID:    "led-type" + chanIndex,
 			Title: "Led Type",
 			Value: strconv.Itoa(ch.StripeType),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-brightness" + index,
+			ID:    "led-brightness" + chanIndex,
 			Title: "Led Brightness",
 			Value: strconv.Itoa(ch.Brightness),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-wshift" + index,
+			ID:    "led-wshift" + chanIndex,
 			Title: "White Shift",
 			Value: strconv.Itoa(ch.WShift),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-rshift" + index,
+			ID:    "led-rshift" + chanIndex,
 			Title: "Red Shift",
 			Value: strconv.Itoa(ch.RShift),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-gshift" + index,
+			ID:    "led-gshift" + chanIndex,
 			Title: "Green Shift",
 			Value: strconv.Itoa(ch.GShift),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-bshift" + index,
+			ID:    "led-bshift" + chanIndex,
 			Title: "Blue Shift",
 			Value: strconv.Itoa(ch.BShift),
 		})
 		cards = append(cards, CardData{
-			ID:    "led-gamma" + index,
+			ID:    "led-gamma" + chanIndex,
 			Title: "Gamma Table",
 			Value: strconv.FormatBool(len(ch.Gamma) > 0),
 		})
 
-		grids = append(grids, GridData{ID: "led-channel" + index, Cards: cards})
+		grids = append(grids, GridData{ID: "led-channel" + chanIndex, Cards: cards})
 		folders = append(folders, FolderData{
-			ID:    "led-channel" + index,
-			Title: "Channel " + index + " Settings",
+			ID:    "led-channel" + chanIndex,
+			Title: "Channel " + chanIndex + " Settings",
 			Open:  false,
 			Grids: grids,
 		})
