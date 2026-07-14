@@ -172,7 +172,7 @@ func buildParameters(channel int, opt *ws2811.Option) FolderData {
 		index  = strconv.Itoa(channel)
 		folder = FolderData{
 			ID:    "parm-channel" + index,
-			Title: "Channel " + index + " Parameters",
+			Title: "Channel " + index + " Preferences",
 			Open:  false,
 		}
 		channelLength = len(opt.Channels)
