@@ -11,9 +11,13 @@ import (
 	"strconv"
 )
 
-func queryRaw(r *http.Request) url.Values {
-	values, err := url.ParseQuery(r.URL.RawQuery)
-	lights.LogError("queryRaw", err)
+func queryForm(r *http.Request) url.Values {
+	err := r.ParseForm()
+	if err != nil {
+		lights.LogError("queryRaw", err)
+		return url.Values{}
+	}
+	values := r.Form
 	return values
 }
 
@@ -26,7 +30,7 @@ func setupHandlers(mux *http.ServeMux, piled *lights.PiLED) {
 	handleBasicColors(mux, piled)
 	mux.HandleFunc("/blink", func(w http.ResponseWriter, r *http.Request) {
 		go func() {
-			values := queryRaw(r)
+			values := queryForm(r)
 			channel := queryChannel(values, piled.ChannelCount())
 			brightness := queryBrightness(values)
 			piled.StartRun()
@@ -44,7 +48,7 @@ func setupHandlers(mux *http.ServeMux, piled *lights.PiLED) {
 	})
 	mux.HandleFunc("/pic", func(w http.ResponseWriter, r *http.Request) {
 		go func() {
-			values := queryRaw(r)
+			values := queryForm(r)
 			channel := queryChannel(values, piled.ChannelCount())
 			brightness := queryBrightness(values)
 			piled.StartRun()
@@ -60,7 +64,7 @@ func handleBasicColors(mux *http.ServeMux, piled *lights.PiLED) {
 	for colorKey, colorVal := range lights.ColorTable {
 		mux.HandleFunc("/"+colorKey, func(w http.ResponseWriter, r *http.Request) {
 			go func() {
-				values := queryRaw(r)
+				values := queryForm(r)
 				channel := queryChannel(values, piled.ChannelCount())
 				brightness := queryBrightness(values)
 				piled.StartRun()
@@ -72,7 +76,7 @@ func handleBasicColors(mux *http.ServeMux, piled *lights.PiLED) {
 
 	mux.HandleFunc("/rgb", func(w http.ResponseWriter, r *http.Request) {
 		go func() {
-			values := queryRaw(r)
+			values := queryForm(r)
 			uc := queryColors(values)
 			channel := queryChannel(values, piled.ChannelCount())
 			piled.StartRun()
@@ -83,7 +87,7 @@ func handleBasicColors(mux *http.ServeMux, piled *lights.PiLED) {
 
 	mux.HandleFunc("/clear", func(w http.ResponseWriter, r *http.Request) {
 		go func() {
-			values := queryRaw(r)
+			values := queryForm(r)
 			channel := queryChannel(values, piled.ChannelCount())
 			piled.StartRun()
 			piled.Clear(channel)

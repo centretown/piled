@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	ws2811 "github.com/rpi-ws281x/rpi-ws281x-go"
 )
@@ -35,19 +36,45 @@ type Bounds struct {
 	Step uint
 }
 
+type Traits map[string]any
+
+const (
+	TraitLocal  = "local"
+	TraitGlobal = "global"
+	TraitAction = "action"
+)
+
+func NewTraits(members ...string) (traits Traits) {
+	traits = make(Traits)
+	for _, member := range members {
+		traits[member] = nil
+	}
+	return
+}
+
 type CardData struct {
 	ID     string
 	Title  string
 	Value  string
-	Edit   bool
+	Traits Traits
 	Bounds Bounds
 	Path   string
 }
 
+func (card *CardData) IsGlobal() (ok bool) { return card.HasTrait(TraitGlobal) }
+func (card *CardData) IsLocal() (ok bool)  { return card.HasTrait(TraitLocal) }
+func (card *CardData) IsAction() (ok bool) { return card.HasTrait(TraitAction) }
+
+func (card *CardData) HasTrait(member string) (ok bool) {
+	_, ok = card.Traits[member]
+	return
+}
+
 func loadDynamic(opt *ws2811.Option, templ *template.Template) func(w http.ResponseWriter, r *http.Request) {
 	folders := make([]FolderData, 0)
+	folders = append(folders, buildColors())
 	for channel := range opt.Channels {
-		folders = append(folders, buildParameters(channel, opt))
+		folders = append(folders, buildPreferences(channel, opt))
 	}
 	folders = append(folders, buildChannels(opt)...)
 	folders = append(folders, buildOptions(opt))
@@ -167,7 +194,33 @@ func buildChannels(opt *ws2811.Option) []FolderData {
 	return folders
 }
 
-func buildParameters(channel int, opt *ws2811.Option) FolderData {
+func buildColors() FolderData {
+	grids := make([]GridData, 0)
+	cards := make([]CardData, 0)
+	cards = append(cards, CardData{
+		ID:    "color-channel",
+		Title: "Channel",
+		Value: "0",
+	})
+
+	for key := range lights.ColorTable {
+		cards = append(cards, CardData{
+			ID:     "color-" + key,
+			Title:  strings.ToTitle(key[0:1]) + key[1:],
+			Value:  key,
+			Traits: NewTraits(TraitAction),
+		})
+	}
+	grids = append(grids, GridData{ID: "led-colors", Cards: cards})
+	return FolderData{
+		ID:    "led-colors",
+		Title: "Colors",
+		Open:  false,
+		Grids: grids,
+	}
+}
+
+func buildPreferences(channel int, opt *ws2811.Option) FolderData {
 	var (
 		index  = strconv.Itoa(channel)
 		folder = FolderData{
@@ -196,10 +249,10 @@ func buildParameters(channel int, opt *ws2811.Option) FolderData {
 				Value: index,
 			},
 			CardData{
-				ID:    "parm-brightness" + index,
-				Title: "Brightness",
-				Value: strconv.Itoa(100),
-				Edit:  true,
+				ID:     "parm-brightness" + index,
+				Title:  "Brightness",
+				Value:  strconv.Itoa(100),
+				Traits: NewTraits(TraitLocal),
 				Bounds: Bounds{
 					Min:  1,
 					Max:  100,
@@ -207,10 +260,10 @@ func buildParameters(channel int, opt *ws2811.Option) FolderData {
 				},
 			},
 			CardData{
-				ID:    "parm-rows" + index,
-				Title: "Rows",
-				Value: strconv.Itoa(1),
-				Edit:  true,
+				ID:     "parm-rows" + index,
+				Title:  "Rows",
+				Value:  strconv.Itoa(1),
+				Traits: NewTraits(TraitLocal),
 				Bounds: Bounds{
 					Min:  1,
 					Max:  1,
@@ -218,10 +271,10 @@ func buildParameters(channel int, opt *ws2811.Option) FolderData {
 				},
 			},
 			CardData{
-				ID:    "parm-columns" + index,
-				Title: "Columns",
-				Value: strconv.Itoa(ledCount),
-				Edit:  true,
+				ID:     "parm-columns" + index,
+				Title:  "Columns",
+				Value:  strconv.Itoa(ledCount),
+				Traits: NewTraits(TraitLocal),
 				Bounds: Bounds{
 					Min:  1,
 					Max:  uint(ledCount),
