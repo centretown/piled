@@ -1,7 +1,8 @@
 <!doctype html>
 <html>
     <head>
-        <title>lights</title>
+        <title>Light Switch</title>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
@@ -41,9 +42,15 @@
                 padding-top: 0.5rem;
                 padding-bottom: 0.5rem;
             }
+            .status-view {
+                position: sticky;
+                top: 0;
+                padding-bottom: .4rem;
+            }
             .edit-view {
                 display: grid;
                 grid-template-columns: auto 4rem;
+                padding-left: .5rem;
             }
             .edit-button {
                 padding-top: 0.5rem;
@@ -65,8 +72,8 @@
             /* Remove margins from "page content" on small screens */
             @media only screen and (max-width: 600px) {
                 #main {
-                    margin-left: 0.5rem;
-                    margin-right: 0.5rem;
+                    margin-left: 0.1rem;
+                    margin-right: 0.1rem;
                 }
             }
         </style>
@@ -98,8 +105,8 @@
                         let socket;
                         let elt;
 
-                        let status_connected = "w3-text-green";
-                        let status_disconnected = "w3-text-yellow";
+                        let status_connected = "w3-text-yellow";
+                        let status_disconnected = "w3-text-grey";
                         let status_error = "w3-text-red";
                         let current_status = status_disconnected;
 
@@ -158,26 +165,9 @@
     </head>
 
     <body class="w3-black">
-        <!-- Page Content -->
-        <div id="main" class="w3-padding-16">
-            <!-- Sensors Section -->
-            <div id="sensors_heading" class="w3-padding-16 w3-content">
-                <h3 class="w3-text-light-grey">
-                    <i
-                        id="ws-status"
-                        class="fa fa-bolt w3-xlarge w3-text-yellow"
-                    ></i>
-                    Lights
-                </h3>
-                <hr style="width: 200px" class="w3-opacity" />
-
-                <!-- Grid for sensors -->
+        <div id="main" class="w3-padding">
                 <div id="dynamic" hx-swap="innerHTML"></div>
                 <div id="users" class="users" style="display: none"></div>
-            </div>
         </div>
-        <!-- End Sensors Section -->
-
-        <!--<script defer></script>-->
     </body>
 </html>

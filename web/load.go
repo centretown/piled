@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"led/lights"
+	"led/socket"
 	"log"
 	"net/http"
 	"strconv"
@@ -61,6 +63,11 @@ type CardData struct {
 	Path   string
 }
 
+type StatusData struct {
+	Color      string
+	Brightness string
+}
+
 func (card *CardData) IsGlobal() (ok bool) { return card.HasTrait(TraitGlobal) }
 func (card *CardData) IsLocal() (ok bool)  { return card.HasTrait(TraitLocal) }
 func (card *CardData) IsAction() (ok bool) { return card.HasTrait(TraitAction) }
@@ -70,7 +77,53 @@ func (card *CardData) HasTrait(member string) (ok bool) {
 	return
 }
 
+var currentStatus = StatusData{Color: "none", Brightness: "none"}
+
+func CurrentStatus() *StatusData {
+	return &currentStatus
+}
+
+type ValueUpdate struct {
+	ID    string
+	Value string
+}
+
+func SetCurrentStatus(sock *socket.Server, tmpl *template.Template, color, brightness string) {
+	currentStatus.Color = color
+	currentStatus.Brightness = brightness
+	var (
+		colorUpdate      = &ValueUpdate{ID: "status-color", Value: color}
+		brightnessUpdate = &ValueUpdate{ID: "status-brightness", Value: brightness}
+	)
+	buf := bytes.NewBufferString("")
+	tmpl.Lookup("value_update").Execute(buf, colorUpdate)
+	tmpl.Lookup("value_update").Execute(buf, brightnessUpdate)
+	sock.Broadcast(buf.String())
+}
+
+var (
+	statusCards = []CardData{{
+		ID:    "status-color",
+		Title: "Color",
+		Value: currentStatus.Color,
+	}, {
+		ID:    "status-brightness",
+		Title: "Brightness",
+		Value: currentStatus.Brightness,
+	}}
+	statusFolder = &FolderData{
+		ID:    "status-header",
+		Title: "Status",
+		Open:  true,
+		Grids: []GridData{
+			{ID: "status-header", Cards: statusCards},
+		},
+	}
+)
+
 func loadDynamic(opt *ws2811.Option, templ *template.Template) func(w http.ResponseWriter, r *http.Request) {
+	// cards := make([]CardData, 0)
+
 	folders := make([]FolderData, 0)
 	folders = append(folders, buildColors())
 	for channel := range opt.Channels {
@@ -80,9 +133,14 @@ func loadDynamic(opt *ws2811.Option, templ *template.Template) func(w http.Respo
 	folders = append(folders, buildOptions(opt))
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
+			Header  *FolderData
 			Folders []FolderData
+			Status  *StatusData
 		}
+
+		data.Header = statusFolder
 		data.Folders = folders
+		data.Status = CurrentStatus()
 		if len(folders) < 1 {
 			log.Fatalln("No folders")
 		}
@@ -186,7 +244,7 @@ func buildChannels(opt *ws2811.Option) []FolderData {
 		grids = append(grids, GridData{ID: "led-channel" + chanIndex, Cards: cards})
 		folders = append(folders, FolderData{
 			ID:    "led-channel" + chanIndex,
-			Title: "Channel " + chanIndex + " Settings",
+			Title: "Settings",
 			Open:  false,
 			Grids: grids,
 		})
@@ -203,6 +261,17 @@ func buildColors() FolderData {
 		Value: "0",
 	})
 
+	cards = append(cards, CardData{
+		ID:     "brightness" + "0",
+		Title:  "Brightness",
+		Value:  strconv.Itoa(100),
+		Traits: NewTraits(TraitLocal),
+		Bounds: Bounds{
+			Min:  1,
+			Max:  100,
+			Step: 1,
+		},
+	})
 	for key := range lights.ColorTable {
 		cards = append(cards, CardData{
 			ID:     "color-" + key,
@@ -224,8 +293,8 @@ func buildPreferences(channel int, opt *ws2811.Option) FolderData {
 	var (
 		index  = strconv.Itoa(channel)
 		folder = FolderData{
-			ID:    "parm-channel" + index,
-			Title: "Channel " + index + " Preferences",
+			ID:    "preferences" + index,
+			Title: "Preferences",
 			Open:  false,
 		}
 		channelLength = len(opt.Channels)
@@ -244,20 +313,9 @@ func buildPreferences(channel int, opt *ws2811.Option) FolderData {
 		grids = make([]GridData, 0)
 		cards = []CardData{
 			CardData{
-				ID:    "parm-channel" + index,
+				ID:    "channel" + index,
 				Title: "Channel",
 				Value: index,
-			},
-			CardData{
-				ID:     "parm-brightness" + index,
-				Title:  "Brightness",
-				Value:  strconv.Itoa(100),
-				Traits: NewTraits(TraitLocal),
-				Bounds: Bounds{
-					Min:  1,
-					Max:  100,
-					Step: 1,
-				},
 			},
 			CardData{
 				ID:     "parm-rows" + index,
@@ -283,7 +341,7 @@ func buildPreferences(channel int, opt *ws2811.Option) FolderData {
 			},
 		}
 	)
-	grids = append(grids, GridData{ID: "parm-channel" + index, Cards: cards})
+	grids = append(grids, GridData{ID: "preferences" + index, Cards: cards})
 	folder.Grids = grids
 	return folder
 }

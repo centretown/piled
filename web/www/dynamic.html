@@ -1,6 +1,20 @@
 {{define "dynamic"}} {{template "script". }}
 <div id="event" hx-ext="ws" ws-connect="/events">
-    <span id="ws-status-menu"></span>
+    <span id="ws-status-menu" class="w3-hide"></span>
+    <span id="light-dummy" class="w3-hide"></span>
+    <div id="sensors_heading" class="w3-black status-view">
+        <h4 class="w3-text-green">
+            <b>
+                <i
+                id="ws-status"
+                class="fa fa-lightbulb-o w3-large w3-text-yellow"
+            >
+            </i>
+            Light Switch</b>
+        <!--<hr style="width: 200px" class="w3-opacity" />-->
+        </h4>
+        {{template "light_status" .Header}}
+    </div>
     {{range $folder := .Folders}}
     <!--  -->
     {{ template "folder" $folder }}
@@ -8,6 +22,16 @@
     {{end}}
     <!--  -->
 </div>
+{{end}}
+<!--  -->
+
+{{define "light_status"}}
+{{ template "folder" . }}
+{{end}}
+<!--  -->
+
+{{define "value_update"}}
+<span id="{{.ID}}">{{.Value}}</span>
 {{end}}
 <!--  -->
 
@@ -79,7 +103,7 @@
             id="{{.ID}}-button"
             class="fa fa-play w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
             type="button"
-            hx-put="/{{.Value}}"
+            hx-on:click="put_value('{{.Value}}')"
         ></button>
     </span>
 </div>
@@ -213,6 +237,11 @@
       set_parm_input(id, id+'-input');
       set_parm_inner(id, id);
       swap_hide(id+'-view',id+'-form');
+    }
+
+    function put_value(id) {
+      let brightness = localStorage.getItem("brightness0");
+      htmx.ajax("PUT", "/"+id+"?brightness="+brightness+"&channel=0","#light-dummy");
     }
 
     function get_input(id) {

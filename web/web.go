@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	brightness = 100
+	brightness = 128
 	ledCounts  = 60
 	sleepTime  = 0
 	gpioPin    = 18
@@ -75,7 +75,7 @@ func main() {
 
 	mux.HandleFunc("/load", loadDynamic(&opt, templ))
 
-	setupHandlers(mux, piled)
+	setupHandlers(mux, piled, sockServer, templ)
 
 	go func() {
 		err := server.ListenAndServe()

@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"image/color"
 	"led/lights"
+	"led/socket"
 	"log"
 	"net"
 	"net/http"
@@ -14,7 +16,7 @@ import (
 func queryForm(r *http.Request) url.Values {
 	err := r.ParseForm()
 	if err != nil {
-		lights.LogError("queryRaw", err)
+		lights.LogError("queryForm", err)
 		return url.Values{}
 	}
 	values := r.Form
@@ -26,8 +28,8 @@ var (
 	pulse    = 40
 )
 
-func setupHandlers(mux *http.ServeMux, piled *lights.PiLED) {
-	handleBasicColors(mux, piled)
+func setupHandlers(mux *http.ServeMux, piled *lights.PiLED, sock *socket.Server, tmpl *template.Template) {
+	handleBasicColors(mux, piled, sock, tmpl)
 	mux.HandleFunc("/blink", func(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			values := queryForm(r)
@@ -60,7 +62,7 @@ func setupHandlers(mux *http.ServeMux, piled *lights.PiLED) {
 	})
 }
 
-func handleBasicColors(mux *http.ServeMux, piled *lights.PiLED) {
+func handleBasicColors(mux *http.ServeMux, piled *lights.PiLED, sock *socket.Server, tmpl *template.Template) {
 	for colorKey, colorVal := range lights.ColorTable {
 		mux.HandleFunc("/"+colorKey, func(w http.ResponseWriter, r *http.Request) {
 			go func() {
@@ -70,6 +72,9 @@ func handleBasicColors(mux *http.ServeMux, piled *lights.PiLED) {
 				piled.StartRun()
 				piled.ShowBytes(channel, []uint32{lights.FromColorBrightness(colorVal, uint32(brightness))})
 				piled.StopRun()
+
+				w.Write([]byte("OK"))
+				SetCurrentStatus(sock, tmpl, colorKey, strconv.Itoa(int(brightness)))
 			}()
 		})
 	}
