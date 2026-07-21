@@ -1,0 +1,106 @@
+=== RUN   TestLoad
+
+<div
+    class="w3-padding w3-dark-grey w3-margin-top w3-round"
+    hx-on:click="toggle_fold('led-colors','led-colors-icon')"
+>
+    <i
+        id="led-colors-icon"
+        class="w3-text-dark-gray w3-large w3-margin-right fa fa-chevron-down"
+    ></i>
+    Colors
+</div>
+ 
+<div id="led-colors" class="w3-grid w3-margin grid ">
+    
+    
+    
+
+ 
+<div
+    id="color-custom1-card"
+    class="w3-card w3-padding w3-asphalt w3-hover-dark-grey w3-border w3-border-indigo w3-round-large"
+>
+    <span id="color-custom1-view" class="edit-view">
+        Custom1 
+        <span>
+            <input
+                id="color-custom1-color"
+                class="w3-text-black w3-center"
+                type="color"
+                name="color-custom1-name"
+                value="#ff0000"
+            />
+            <script>
+                set_parm_elem("color-custom1", "color-custom1-color");
+            </script>
+        </span>
+        
+        
+        <span>
+            <button
+                id="color-custom1-edit"
+                class="fa fa-pencil w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+                type="button"
+                hx-on:click="swap_hide('color-custom1-view','color-custom1-form')"
+            ></button>
+        </span>
+        
+        <span>
+            <button
+                id="color-custom1-button"
+                class="fa fa-play w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+                type="button"
+                hx-on:click="put_value('color-custom1', '#ff0000')"
+            ></button>
+        </span>
+        
+        
+    </span>
+    <span id="color-custom1-form" class="w3-hide"> 
+<form class="edit-view">
+    <span>
+        <div>Custom1</div>
+         
+<span>
+    <input
+        id="color-custom1-label"
+        class="w3-text-black w3-center"
+        type="text"
+        name="color-custom1-label"
+        value="Custom1"
+    />
+    <script>
+        set_parm_elem("color-custom1-label", "color-custom1-label");
+    </script>
+</span>
+
+        <span>
+            <button
+                class="fa fa-undo w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+                type="button"
+                hx-on:click="set_parm_elem('color-custom1-label','color-custom1-label');"
+            ></button>
+            <button
+                class="fa fa-check w3-large w3-asphalt w3-text-teal w3-round edit-button"
+                type="button"
+                hx-on:click="submit_value('color-custom1-label',0,0);"
+            ></button>
+        </span>
+        
+        
+        
+    </span>
+</form>
+ </span>
+</div>
+ 
+
+
+    
+    
+    
+</div>
+  --- PASS: TestLoad (0.00s)
+PASS
+ok  	led/web	0.009s

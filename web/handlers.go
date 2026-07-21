@@ -63,21 +63,21 @@ func setupHandlers(mux *http.ServeMux, piled *lights.PiLED, sock *socket.Server,
 }
 
 func handleBasicColors(mux *http.ServeMux, piled *lights.PiLED, sock *socket.Server, tmpl *template.Template) {
-	for colorKey, colorVal := range lights.ColorTable {
-		mux.HandleFunc("/"+colorKey, func(w http.ResponseWriter, r *http.Request) {
-			go func() {
-				values := queryForm(r)
-				channel := queryChannel(values, piled.ChannelCount())
-				brightness := queryBrightness(values)
-				piled.StartRun()
-				piled.ShowBytes(channel, []uint32{lights.FromColorBrightness(colorVal, uint32(brightness))})
-				piled.StopRun()
+	mux.HandleFunc("/color", func(w http.ResponseWriter, r *http.Request) {
+		go func() {
+			values := queryForm(r)
+			colorHex := queryColor(values)
+			colorVal := lights.ToColor(colorHex)
+			channel := queryChannel(values, piled.ChannelCount())
+			brightness := queryBrightness(values)
+			piled.StartRun()
+			piled.ShowBytes(channel, []uint32{lights.FromColorBrightness(colorVal, uint32(brightness))})
+			piled.StopRun()
 
-				w.Write([]byte("OK"))
-				SetCurrentStatus(sock, tmpl, colorKey, strconv.Itoa(int(brightness)))
-			}()
-		})
-	}
+			w.Write([]byte("OK"))
+			SetCurrentStatus(sock, tmpl, "color", strconv.Itoa(int(brightness)))
+		}()
+	})
 
 	mux.HandleFunc("/rgb", func(w http.ResponseWriter, r *http.Request) {
 		go func() {
@@ -138,6 +138,22 @@ func queryBrightness(values url.Values) uint8 {
 
 func queryChannel(values url.Values, channelCount int) int {
 	return queryRange(values, "channel", 0, channelCount-1, 0)
+}
+
+func queryColor(values url.Values) uint32 {
+	fname := "queryColor"
+	value, ok := values["value"]
+	if !ok {
+		lights.LogError(fname, fmt.Errorf("value not found"))
+		return 0
+	}
+	log.Println(value[0])
+	i, err := strconv.Atoi(value[0])
+	if err != nil {
+		lights.LogError(fname, err)
+		return 0
+	}
+	return uint32(i)
 }
 
 func queryColors(values url.Values) uint32 {

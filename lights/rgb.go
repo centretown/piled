@@ -5,7 +5,7 @@ import "image/color"
 const MaxColor = uint8(255)
 const MaxBright = uint32(100)
 
-func ToRGBA(c uint32) color.RGBA {
+func ToColor(c uint32) color.Color {
 	return color.RGBA{
 		R: uint8((c & 0xff0000) >> 16),
 		G: uint8((c & 0xff00) >> 8),
@@ -40,7 +40,7 @@ func FromBackGround(c color.Color, brightness uint32, background uint32) uint32 
 	return FromColorBrightness(c, brightness) | background
 }
 
-func FromColorThreshold(r, g, b uint32, threshHold uint32) uint32 {
+func FromRawColorThreshold(r, g, b uint32, threshHold uint32) uint32 {
 	r, g, b = r>>8, g>>8, (b >> 8)
 	return (r<<16 | g<<8 | b) | threshHold
 }

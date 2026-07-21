@@ -31,17 +31,17 @@
                 gap: 8px;
                 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             }
-            .button-container {
-                width: 100%;
-                display: grid;
-                grid-template-columns: auto auto;
-                gap: 4px;
-            }
-            .form-button {
-                margin-top: 0.5rem;
-                padding-top: 0.5rem;
-                padding-bottom: 0.5rem;
-            }
+            /*.button-container {*/
+                /*width: 100%;*/
+                /*display: grid;*/
+                /*grid-template-columns: auto auto;*/
+                /*gap: 4px;*/
+            /*}*/
+            /*.form-button {*/
+                /*margin-top: 0.5rem;*/
+                /*padding-top: 0.5rem;*/
+                /*padding-bottom: 0.5rem;*/
+            /*}*/
             .status-view {
                 position: sticky;
                 top: 0;
@@ -49,12 +49,18 @@
             }
             .edit-view {
                 display: grid;
-                grid-template-columns: auto 4rem;
-                padding-left: .5rem;
+                grid-template-columns: minmax(5rem, auto) 4rem;
+                column-gap: .4rem;
+            }
+            .color-button {
+                padding-top: 0.1rem;
+                padding-bottom: 0.1rem;
+                width: 4rem;
             }
             .edit-button {
-                padding-top: 0.5rem;
-                padding-bottom: 0.5rem;
+                padding-top: 0.4rem;
+                padding-bottom: 0.4rem;
+                width: 4rem;
             }
             .w3-row-padding img {
                 margin-bottom: 12px;
@@ -106,7 +112,7 @@
                         let elt;
 
                         let status_connected = "w3-text-yellow";
-                        let status_disconnected = "w3-text-grey";
+                        let status_disconnected = "w3-text-gray";
                         let status_error = "w3-text-red";
                         let current_status = status_disconnected;
 

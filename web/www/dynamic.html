@@ -3,17 +3,18 @@
     <span id="ws-status-menu" class="w3-hide"></span>
     <span id="light-dummy" class="w3-hide"></span>
     <div id="sensors_heading" class="w3-black status-view">
-        <h4 class="w3-text-green">
+        <h4 id="ws-status" class="w3-text-gray">
             <b>
-                <i
-                id="ws-status"
-                class="fa fa-lightbulb-o w3-large w3-text-yellow"
+                <i class="fa fa-lightbulb-o w3-large"></i>
+                Light Switch</b
             >
-            </i>
-            Light Switch</b>
-        <!--<hr style="width: 200px" class="w3-opacity" />-->
         </h4>
-        {{template "light_status" .Header}}
+        {{range $folder := .Header}}
+        <!--  -->
+        {{ template "folder" $folder }}
+        <!--  -->
+        {{end}}
+        <!--  -->
     </div>
     {{range $folder := .Folders}}
     <!--  -->
@@ -22,11 +23,6 @@
     {{end}}
     <!--  -->
 </div>
-{{end}}
-<!--  -->
-
-{{define "light_status"}}
-{{ template "folder" . }}
 {{end}}
 <!--  -->
 
@@ -46,13 +42,11 @@
     ></i>
     {{.Title}}
 </div>
-{{range $index, $grid := .Grids}}
-<div id="{{.ID}}">{{template "grid" $grid}}</div>
-{{end}} {{end}}
+{{range $index, $grid := .Grids}} {{template "grid" $grid}} {{end}} {{end}}
 <!--  -->
 
 {{define "grid"}}
-<div id="{{.ID}}" class="w3-grid w3-margin grid">
+<div id="{{.ID}}" class="w3-grid w3-margin grid {{if .Hide}}w3-hide{{end}}">
     {{range $card := .Cards}}
     <!--  -->
     {{template "card" $card }}
@@ -65,12 +59,9 @@
 
 {{define "card"}}
 <!-- -->
-{{if .IsLocal}} {{template "card_local" .}}
-{{else if .IsGlobal}} {{template "card_global" .}}
-{{else if .IsAction}} {{template "card_action" .}}
-{{else}}
-    {{template "card_display" .}}
-{{end}}
+{{if .IsLocal}} {{template "card_local" .}} {{else}} {{template "card_display"
+.}} {{end}}
+<!--  -->
 {{end}}
 <!--  -->
 
@@ -85,27 +76,10 @@
 {{define "card_global"}}
 <div
     id="{{.ID}}-card"
-    class="w3-card w3-padding w3-asphalt w3-hover-dark-grey w3-border w3-border-indigo w3-round-large">
+    class="w3-card w3-padding w3-asphalt w3-hover-dark-grey w3-border w3-border-indigo w3-round-large"
+>
     {{.Title}}
     <span>{{template "value" .}}</span>
-</div>
-{{end}}
-<!--  -->
-
-{{define "card_action"}}
-<div
-    id="{{.ID}}-card"
-    class="w3-card w3-padding w3-asphalt w3-hover-dark-grey w3-border w3-border-indigo w3-round-large">
-    {{.Title}}
-    <span id="{{.ID}}-view" class="edit-view">
-        <span>{{template "value" .}}</span>
-        <button
-            id="{{.ID}}-button"
-            class="fa fa-play w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
-            type="button"
-            hx-on:click="put_value('{{.Value}}')"
-        ></button>
-    </span>
 </div>
 {{end}}
 <!--  -->
@@ -115,65 +89,152 @@
     id="{{.ID}}-card"
     class="w3-card w3-padding w3-asphalt w3-hover-dark-grey w3-border w3-border-indigo w3-round-large"
 >
-    {{.Title}}
     <span id="{{.ID}}-view" class="edit-view">
-        <div>{{template "value-edit" .}}</div>
-        <button
-            id="{{.ID}}-button"
-            class="fa fa-pencil w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
-            type="button"
-            hx-on:click="swap_hide('{{.ID}}-view','{{.ID}}-form')"
-        ></button>
+        <span>
+            <div id="{{.ID}}-title">{{.Title}}</div>
+            <!---->
+            {{if .IsColor}}
+            <div>
+                <script>
+                set_parm_inner("{{.ID}}-label", "{{.ID}}-title");
+                </script>
+                <input
+                    id="{{.ID}}-color"
+                    class="w3-text-black w3-center"
+                    type="color"
+                    name="{{.ID}}-name"
+                    value="{{.Value}}"
+                    onchange="set_parm_input('{{.ID}}', '{{.ID}}-color')"
+                />
+                <script>
+                    set_parm_elem("{{.ID}}", "{{.ID}}-color");
+                </script>
+            </div>
+            {{else}}
+            <!---->
+            <div class="w3-text-amber">
+                <span id="{{.ID}}">{{.Value}}</span>
+                <script>
+                    set_parm_inner("{{.ID}}", "{{.ID}}");
+                </script>
+            </div>
+            {{end}}
+            <!---->
+        </span>
+        <span>
+            <button
+                id="{{.ID}}-edit"
+                class="fa fa-pencil w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+                type="button"
+                hx-on:click="swap_hide('{{.ID}}-view','{{.ID}}-form')"
+            ></button>
+            {{if .IsAction}}
+            <button
+                id="{{.ID}}-button"
+                class="fa fa-play w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+                type="button"
+                hx-on:click="put_value('color', '{{.ID}}');"
+            ></button>
+            {{end}}
+        </span>
+        <!--  -->
     </span>
     <span id="{{.ID}}-form" class="w3-hide"> {{template "form" .}} </span>
 </div>
 {{end}}
 <!--  -->
 
+{{define "edit_number"}}
+<span class="edit-view">
+    <script>
+        set_parm_elem("{{.ID}}", "{{.ID}}-input");
+
+        function submit_number(id, min, max) {
+            console.log("submit_number: " + id);
+            submit_value(id, id + "-input", min, max);
+            set_parm_inner(id, id);
+            swap_hide(id + "-view", id + "-form");
+        }
+    </script>
+    <span>
+        <div>{{.Title}}</div>
+        <input
+            id="{{.ID}}-input"
+            class="w3-text-black w3-center"
+            type="number"
+            name="{{.ID}}"
+            value="{{.Value}}"
+            style="width: 7rem"
+            {{if
+            gt
+            .Bounds.Step
+            0}}
+            min="{{.Bounds.Min}}"
+            max="{{.Bounds.Max}}"
+            step="{{.Bounds.Step}}"
+            {{end}}
+        />
+    </span>
+    <span>
+        <button
+            class="fa fa-undo w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+            type="button"
+            hx-on:click="set_parm_elem('{{.ID}}','{{.ID}}-input');"
+        ></button>
+        <button
+            class="fa fa-check w3-large w3-asphalt w3-text-teal w3-round edit-button"
+            type="button"
+            hx-on:click="submit_number('{{.ID}}',{{.Bounds.Min}},{{.Bounds.Max}});"
+        ></button>
+    </span>
+</span>
+{{end}}
+<!--  -->
+
+{{define "edit_label"}}
+<span class="edit-view">
+    <script>
+        set_parm_elem("{{.ID}}-label", "{{.ID}}-input");
+        function submit_label(id) {
+            console.log("submit_label: " + id);
+            submit_value(id+"-label", id+"-input", 0, 0);
+            set_parm_inner(id + "-label", id + "-title");
+            swap_hide(id + "-view", id + "-form");
+        }
+    </script>
+    <span>
+        <div>Label</div>
+        <input
+            id="{{.ID}}-input"
+            class="w3-text-black w3-center"
+            type="text"
+            name="{{.ID}}-label"
+            value="{{.Title}}"
+            size="5"
+        />
+    </span>
+    <span>
+        <button
+            class="fa fa-undo w3-large w3-asphalt w3-text-blue-grey w3-round edit-button"
+            type="button"
+            hx-on:click="set_parm_elem('{{.ID}}-label','{{.ID}}-label-input');"
+        ></button>
+        <button
+            class="fa fa-check w3-large w3-asphalt w3-text-teal w3-round edit-button"
+            type="button"
+            hx-on:click="submit_label('{{.ID}}');"
+        ></button>
+    </span>
+</span>
+{{end}}
+<!--  -->
+
 {{define "form"}}
-<form>
-    <input
-        id="{{.ID}}-input"
-        class="w3-text-black w3-center"
-        type="number"
-        name="{{.ID}}-name"
-        value="{{.Value}}"
-        style="width: 7rem"
-        {{if gt .Bounds.Step 0}}
-        min="{{.Bounds.Min}}"
-        max="{{.Bounds.Max}}"
-        step="{{.Bounds.Step}}"
-        {{end}}
-    />
-    <script>set_parm_elem('{{.ID}}','{{.ID}}-input');</script>
-    {{template "form_buttons" .}}
-</form>
-{{end}}
+<!--<form>-->
+{{if .IsLabel}} {{template "edit_label" .}}
 <!--  -->
-
-{{define "form_buttons"}}
-<div class="button-container">
-    {{template "button_reset" .}} {{template "button_submit" .}}
-</div>
-<!--  -->
-{{end}}
-<!--  -->
-
-{{define "button_reset"}}
-<button
-    class="fa fa-undo w3-large w3-asphalt w3-text-blue-grey w3-round form-button"
-    type="button"
-    hx-on:click="set_parm_elem('{{.ID}}','{{.ID}}-input');"
-></button>
-{{end}}
-<!--  -->
-
-{{define "button_submit"}}
-<button
-    class="fa fa-check w3-large w3-asphalt w3-text-teal w3-round form-button"
-    type="button"
-    hx-on:click="submit_value('{{.ID}}',{{.Bounds.Min}},{{.Bounds.Max}});"
-></button>
+{{else if .IsNumber}} {{template "edit_number" .}} {{end}}
+<!--</form>-->
 {{end}}
 <!--  -->
 
@@ -196,146 +257,160 @@
 
 {{define "script"}}
 <script>
-    const w3_hide = "w3-hide";
-    const fa_down = "fa-chevron-down";
-    const fa_right = "fa-chevron-right";
-    const element_not_found = "element not found";
-    const invalid_arguments = "invalid arguments";
-    const less_than_minimum = "less than minimum";
-    const greater_than_maximum = "greater than maximum";
-    // const parms = new Map();
-    let value;
-    {{range $folder:= .Folders}}
-      {{range $grid:=$folder.Grids}}
-        {{range $card:=$grid.Cards}}
-          {{if $card.IsLocal}}
+     const w3_hide = "w3-hide";
+     const fa_down = "fa-chevron-down";
+     const fa_right = "fa-chevron-right";
+     const element_not_found = "element not found";
+     const invalid_arguments = "invalid arguments";
+     const less_than_minimum = "less than minimum";
+     const greater_than_maximum = "greater than maximum";
+     // const parms = new Map();
+     let value;
+     {{range $folder:= .Folders}}
+       {{range $grid:=$folder.Grids}}
+         {{range $card:=$grid.Cards}}
+           {{if $card.IsLocal}}
+            {{if $card.IsLabel}}
+              value = localStorage.getItem('{{$card.ID}}-label');
+              if (!value) {
+                localStorage.setItem('{{$card.ID}}-label','{{$card.Title}}');
+                value = '{{$card.Title}}';
+              }
+              console.log('{{$card.ID}}-label' + " is " + value);
+            {{end}}
             value = localStorage.getItem('{{$card.ID}}');
             if (!value) {
               localStorage.setItem('{{$card.ID}}','{{$card.Value}}');
               value = '{{$card.Value}}';
             }
             console.log('{{$card.ID}}' + " is " + value);
-          {{end}}
-        {{end}}
-      {{end}}
-    {{end}}
+           {{end}}
+         {{end}}
+       {{end}}
+     {{end}}
 
-    function submit_value(id,min,max) {
-      let [value,elt] = get_input(id+'-input');
-      if (value<min) {
-        console.log("submit_value: "+less_than_minimum, min, value);
-        elt.setCustomValidity(less_than_minimum);
-        elt.reportValidity();
-        return;
-      }
-      if (value>max) {
-        console.log("submit_value: "+greater_than_maximum, max, value);
-        elt.setCustomValidity(greater_than_maximum);
-        elt.reportValidity();
-        return;
-      }
-      set_parm_input(id, id+'-input');
-      set_parm_inner(id, id);
-      swap_hide(id+'-view',id+'-form');
-    }
-
-    function put_value(id) {
-      let brightness = localStorage.getItem("brightness0");
-      htmx.ajax("PUT", "/"+id+"?brightness="+brightness+"&channel=0","#light-dummy");
-    }
-
-    function get_input(id) {
-      if (!id) {
-        console.log("get_input: "+invalid_arguments, key);
-        return [-1,nil];
-      }
-      let elt = document.getElementById(id);
-      if (!elt) {
-        console.log("get_input: "+element_not_found, key, id);
-        return [-1,nil];
-      }
-      return [elt.value,elt];
-   }
-
-    function set_parm_input(key, id) {
-      if (!key || !id) {
-        console.log("set_parm_input"+invalid_arguments, key, id);
-        return;
-      }
-      let elt = document.getElementById(id);
-      if (!elt) {
-        console.log("set_parm_input: "+element_not_found, id);
-      }
-      localStorage.setItem(key, elt.value);
-    }
-
-    function set_parm_inner(key, id) {
-      if (!key || !id) {
-        console.log("set_parm_inner "+invalid_arguments, key, id);
-        return;
-      }
-      let elt = document.getElementById(id);
-      if (!elt) {
-          console.log("set_parm_inner "+element_not_found, id);
+     function submit_value(id, inputid, min, max) {
+        console.log("submit_value: ", id, inputid, min, max);
+       let [value,elt] = get_input(inputid);
+       if (min!=max){
+        if (value<min) {
+          console.log("submit_value: "+less_than_minimum, min, value);
+          elt.setCustomValidity(less_than_minimum);
+          elt.reportValidity();
           return;
-      }
-      let value = localStorage.getItem(key);
-      elt.innerHTML = value;
+        }
+        if (value>max) {
+          console.log("submit_value: "+greater_than_maximum, max, value);
+          elt.setCustomValidity(greater_than_maximum);
+          elt.reportValidity();
+          return;
+        }
+       }
+       set_parm_input(id, inputid);
+     }
+
+     function put_value(path, id) {
+       console.log("put_value", path, id);
+       let hexString = localStorage.getItem(id);
+       let num = parseInt(hexString.substring(1), 16);
+       let brightness = localStorage.getItem("brightness0");
+       htmx.ajax("PUT", "/"+path+"?value="+num+"&brightness="+brightness+"&channel=0",
+         "#light-dummy");
+     }
+
+     function get_input(id) {
+       if (!id) {
+         console.log("get_input: "+invalid_arguments, id);
+         return [-1,-1];
+       }
+       let elt = document.getElementById(id);
+       if (!elt) {
+         console.log("get_input: "+element_not_found, id);
+         return [-1,-1];
+       }
+       return [elt.value,elt];
     }
 
-    function set_parm_elem(key, id) {
-      if (!key || !id) {
-        console.log("set_parm_elem: "+invalid_arguments, key, id);
-        return;
-      }
-      let elt = document.getElementById(id);
-      if (!elt) {
-        console.log("set_parm_elem: "+element_not_found, key, id);
-        return;
-      }
-      elt.value = localStorage.getItem(key);
-    }
+     function set_parm_input(key, id) {
+       if (!key || !id) {
+         console.log("set_parm_input "+invalid_arguments, key, id);
+         return;
+       }
+       let elt = document.getElementById(id);
+       if (!elt) {
+         console.log("set_parm_input: "+element_not_found, id);
+       }
+       localStorage.setItem(key, elt.value);
+     }
 
-    function toggle_fold(id, icon_id) {
-        let elt = document.getElementById(id);
-        if (elt && icon_id) {
-            if (elt.className.indexOf(w3_hide) == -1) {
-                htmx.addClass(elt, w3_hide);
-                swap_class(icon_id, fa_down, fa_right);
-            } else {
-                htmx.removeClass(elt, w3_hide);
-                swap_class(icon_id, fa_right, fa_down);
-            }
-        }
-    }
-    function swap_hide(id, id2) {
-        let elt = htmx.find("#" + id);
-        let elt2 = htmx.find("#" + id2);
-        if (elt && elt2) {
-            if (elt.className.indexOf(w3_hide) == -1) {
-                htmx.addClass(elt, w3_hide);
-                htmx.removeClass(elt2, w3_hide);
-            } else {
-                htmx.addClass(elt2, w3_hide);
-                htmx.removeClass(elt, w3_hide);
-            }
-        } else {
-            if (!elt) {
-                console.log(id, " not found");
-            }
-            if (!elt2) {
-                console.log(id2, " not found");
-            }
-        }
-    }
+     function set_parm_inner(key, id) {
+       if (!key || !id) {
+         console.log("set_parm_inner "+invalid_arguments, key, id);
+         return;
+       }
+       let elt = document.getElementById(id);
+       if (!elt) {
+           console.log("set_parm_inner "+element_not_found, id);
+           return;
+       }
+       let value = localStorage.getItem(key);
+       elt.innerHTML = value;
+       console.log("set_parm_inner "+value, id);
+     }
 
-    function swap_class(id, cls, cls2) {
-        let elt = htmx.find("#" + id);
-        if (elt && cls && cls2) {
-            htmx.removeClass(elt, cls);
-            htmx.addClass(elt, cls2);
-        }
-    }
+     function set_parm_elem(key, id) {
+       if (!key || !id) {
+         console.log("set_parm_elem: "+invalid_arguments, key, id);
+         return;
+       }
+       let elt = document.getElementById(id);
+       if (!elt) {
+         console.log("set_parm_elem: "+element_not_found, key, id);
+         return;
+       }
+       elt.value = localStorage.getItem(key);
+     }
+
+     function toggle_fold(id, icon_id) {
+         let elt = document.getElementById(id);
+         if (elt && icon_id) {
+             if (elt.className.indexOf(w3_hide) == -1) {
+                 htmx.addClass(elt, w3_hide);
+                 swap_class(icon_id, fa_down, fa_right);
+             } else {
+                 htmx.removeClass(elt, w3_hide);
+                 swap_class(icon_id, fa_right, fa_down);
+             }
+         }
+     }
+     function swap_hide(id, id2) {
+         let elt = htmx.find("#" + id);
+         let elt2 = htmx.find("#" + id2);
+         if (elt && elt2) {
+             if (elt.className.indexOf(w3_hide) == -1) {
+                 htmx.addClass(elt, w3_hide);
+                 htmx.removeClass(elt2, w3_hide);
+             } else {
+                 htmx.addClass(elt2, w3_hide);
+                 htmx.removeClass(elt, w3_hide);
+             }
+         } else {
+             if (!elt) {
+                 console.log(id, " not found");
+             }
+             if (!elt2) {
+                 console.log(id2, " not found");
+             }
+         }
+     }
+
+     function swap_class(id, cls, cls2) {
+         let elt = htmx.find("#" + id);
+         if (elt && cls && cls2) {
+             htmx.removeClass(elt, cls);
+             htmx.addClass(elt, cls2);
+         }
+     }
 </script>
 {{end}}
 <!--  -->
